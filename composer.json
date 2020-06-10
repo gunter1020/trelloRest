@@ -1,0 +1,16 @@
+{
+    "name": "gnuter1020/trello-working",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Gunter1020",
+            "email": "abcd2221925@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": { "trelloRest\\": "src/"}
+    },
+    "require": {
+        "nueip/curl": "^0.4.1"
+    }
+}

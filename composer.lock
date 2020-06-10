@@ -1,0 +1,59 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "557ad8c7e1ff026c0da83893c8c46f39",
+    "packages": [
+        {
+            "name": "nueip/curl",
+            "version": "0.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/nueip/curl.git",
+                "reference": "a62b313be4e327b541945ad2d223eb4e717cacbc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/nueip/curl/zipball/a62b313be4e327b541945ad2d223eb4e717cacbc",
+                "reference": "a62b313be4e327b541945ad2d223eb4e717cacbc",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.4"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "nueip\\curl\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "RD Team",
+                    "email": "nueip945ad@gmail.com"
+                }
+            ],
+            "description": "NuEIP Curl.",
+            "homepage": "https://github.com/nueip/curl",
+            "time": "2020-06-10T08:01:52+00:00"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
+}
