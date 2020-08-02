@@ -140,32 +140,72 @@ class Client
     }
 
     /**
+     * GET /1/boards/{id}/members
+     *
+     * @return array
+     */
+    public function getBoardMembers()
+    {
+        $config = clone $this->_crawlerConfig;
+        $config
+            ->setType('GET')
+            ->setUri("/boards/{$this->idBoard}/members");
+
+        return json_decode($this->restAPI($config), true);
+    }
+
+    /**
      * GET /1/cards/{id}/customFieldItems
      *
      * @return array
      */
     public function getCardsCustomFields()
     {
-        $result = [];
+        return $this->_batch('/cards/%s/customFieldItems', $this->idCards);
+    }
 
-        $idCard = $this->idCards;
+    /**
+     * GET /1/members/{id}/cards
+     *
+     * @return array
+     */
+    public function getMemberCards($idMember)
+    {
+        $config = clone $this->_crawlerConfig;
+        $config
+            ->setType('GET')
+            ->setUri("/members/{$idMember}/cards");
+
+        return json_decode($this->restAPI($config), true);
+    }
+
+    /**
+     * GET /batch
+     *
+     * @param string $uri
+     * @param array|string $idList
+     * @return array
+     */
+    private function _batch($uri, $idList)
+    {
+        $result = [];
 
         $config = clone $this->_crawlerConfig;
         $config->setType('GET');
 
-        if (is_array($idCard)) {
+        if (is_array($idList)) {
             $config->setUri('/batch');
 
             // Builder uri string
-            $idCard = array_map(function ($id) {
-                return "/cards/{$id}/customFieldItems";
-            }, $idCard);
+            $idList = array_map(function ($id) use ($uri) {
+                return sprintf($uri, $id);
+            }, $idList);
 
             // Batch get result
-            foreach (array_chunk($idCard, 10) as $uri) {
+            foreach (array_chunk($idList, 10) as $urls) {
                 // Set batch requests string
                 $config->appendData([
-                    'urls' => implode(',', $uri),
+                    'urls' => implode(',', $urls),
                 ]);
                 $response = json_decode($this->restAPI($config), true);
 
@@ -178,7 +218,7 @@ class Client
                 }
             }
         } else {
-            $config->setUri("/cards/{$idCard}/customFieldItems");
+            $config->setUri(sprintf($uri, $idList));
             $result = json_decode($this->restAPI($config), true);
         }
 
