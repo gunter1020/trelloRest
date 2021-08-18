@@ -1,17 +1,24 @@
 <?php
 // API Key
-define('API_KEY', '');
+define('API_KEY', '63f885388153e4cd96d9108aaf14af92');
 
 // API Token
-define('API_TOKEN', '');
+define('API_TOKEN', '05402354bb99c231f9a1dd1919768d4adab15fdb69329027326b7af8e260a4a5');
 
 // RD Board
-define('BOARD_RD_BACKEND', '');
-define('BOARD_RD_FRONTEND', '');
-define('BOARD_RD_CRM', '');
+define('BOARD_RD_BACKEND', '59cb0d37f80ee27bb01831a0');
+// define('BOARD_RD_FRONTEND', '5db8e5511664ba528b33ac46');
+// define('BOARD_RD_CRM', '5eb253a2b05803463108d2cc');
+define('BOARD_RD_DEVOPS', '5faca67d4904e425f3d4aeff');
+define('BOARD_RD_SURVEY', '61e2275e0a52b144861b2a63');
+// define('BOARD_RD_BPM', '620cb83859a3ee0726b081b1');
+define('BOARD_RD_Portal', '63ae57b6701eca0142b2846c');
 
 // QA Board
-define('BOARD_QA', '');
+define('BOARD_QA', '5ce2516d5823083320e3c6fe');
+
+// NUEiP Releases
+define('BOARD_RELEASE', '61a98be03cd01844078ec58f');
 
 require_once 'vendor/autoload.php';
 
@@ -63,8 +70,13 @@ class Nueip
         // RD board card
         $this->_cardsMap['RD'] = array_merge(
             $this->cardMapBuilder(BOARD_RD_BACKEND),
-            $this->cardMapBuilder(BOARD_RD_FRONTEND),
-            $this->cardMapBuilder(BOARD_RD_CRM),
+            // $this->cardMapBuilder(BOARD_RD_FRONTEND),
+            // $this->cardMapBuilder(BOARD_RD_CRM),
+            $this->cardMapBuilder(BOARD_RELEASE),
+            $this->cardMapBuilder(BOARD_RD_DEVOPS),
+            $this->cardMapBuilder(BOARD_RD_SURVEY),
+            // $this->cardMapBuilder(BOARD_RD_BPM),
+            $this->cardMapBuilder(BOARD_RD_Portal)
         );
 
         // QA board card
@@ -80,22 +92,40 @@ class Nueip
     {
         $output = [];
 
+        $groupConv = [
+            '維運' => 'RD1-週報',
+            '桃園' => 'RD1-週報',
+            '薪資' => 'RD1-週報',
+            'HRM' => 'RD1-週報',
+            'Portal' => 'RD1-週報',
+            '前端' => 'RD1-週報',
+        ];
+
         // Get all card
         $cardMap = array_merge($this->_cardsMap['RD'], $this->_cardsMap['QA']);
 
         foreach ($cardMap as $card) {
             $customFields = $card['customFields'];
             $group = $customFields['組別'] ?? '未指派';
+            $group = $groupConv[$group] ?? $group;
             $size = $customFields['專案規模'] ?? 'X-未規劃';
-            $devStart = $customFields['開發起始日'] ?? '0000-00-00';
-            $devEnd = $customFields['開發完成日'] ?? '2099-12-31';
+            $devStart = $customFields['開發起始日'] ?? $customFields['調查起始日'] ?? '0000-00-00';
+            $devEnd = $customFields['開發完成日'] ?? $customFields['調查完成日'] ?? '2099-12-31';
+            $devScheEnd = $customFields['開發預定完成日'] ?? $customFields['調查預定完成日'] ?? '2099-12-31';
+            $process = $customFields['進度'] ?? '未填寫';
+
+            $devStartStr = $devStart !== '0000-00-00' ? $devStart : '開發起始日-未定';
+            $devEndStr = $devEnd !== '2099-12-31' ? $devEnd : ($devStart !== '0000-00-00' ? '開發中' : '-');
+            $devScheEndStr = $devScheEnd != '2099-12-31' ? $devScheEnd : '預定完成日-未定';
 
             preg_match('/([\w\.]+)#/', $card['name'], $matches);
             $cardDeveloper = $matches[1] ?? '未指派人員';
             $status = $this->_getStatus($devStart, $devEnd);
             $output[$group][$cardDeveloper][$status][$size][] = [
                 'name' => "[{$card['name']}]({$card['shortUrl']})",
-                'date' => "(**{$devStart}** ~ **{$devEnd}**)",
+                'date' => "(**{$devStartStr}** ～ **{$devEndStr}**)",
+                'finishDate' => "**{$devScheEndStr}**",
+                'process' => "**{$process}**",
             ];
         }
 
@@ -127,9 +157,12 @@ class Nueip
         $output = [];
 
         $groupConv = [
-            '維運' => 'HRM',
-            '桃園' => 'HRM',
-            '薪資' => 'HRM',
+            '維運' => 'RD1-月報',
+            '桃園' => 'RD1-月報',
+            '薪資' => 'RD1-月報',
+            'HRM' => 'RD1-月報',
+            'Portal' => 'RD1-月報',
+            '前端' => 'RD1-月報',
         ];
 
         // Get all card
@@ -403,7 +436,7 @@ class Nueip
         !file_exists(dirname($savePath)) && mkdir(dirname($savePath), 0755, true);
 
         $contents = [
-            "# {$this->start} ~ {$this->end} 工作進度跟預計完成時間",
+            "# {$this->start} ～ {$this->end} 工作進度跟預計完成時間",
         ];
 
         $countSize = [];
@@ -484,11 +517,13 @@ class Nueip
                         switch ($status) {
                             case '開發中':
                                 $contents[] = "      - 開發起訖: {$cardMate['date']}";
-                                $contents[] = "      - 項目進度: ";
+                                $contents[] = "      - 預計完成: {$cardMate['finishDate']}";
+                                $contents[] = "      - 項目進度: {$cardMate['process']}";
                                 break;
                             case '已完成':
                                 $contents[] = "      - 開發起訖: {$cardMate['date']}";
-                                $contents[] = "      - 項目進度: 進入測試序列 | 結案";
+                                $contents[] = "      - 預計完成: {$cardMate['finishDate']}";
+                                $contents[] = "      - 項目進度: {$cardMate['process']}";
                                 break;
                             case '未處理':
                             default:
