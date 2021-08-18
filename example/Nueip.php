@@ -87,13 +87,16 @@ class Nueip
             $customFields = $card['customFields'];
             $group = $customFields['組別'] ?? '未指派';
             $size = $customFields['專案規模'] ?? 'X-未規劃';
-            $devStart = $customFields['開發起始日'] ?? null;
-            $devEnd = $customFields['開發完成日'] ?? null;
+            $devStart = $customFields['開發起始日'] ?? '0000-00-00';
+            $devEnd = $customFields['開發完成日'] ?? '2099-12-31';
 
             preg_match('/([\w\.]+)#/', $card['name'], $matches);
             $cardDeveloper = $matches[1] ?? '未指派人員';
             $status = $this->_getStatus($devStart, $devEnd);
-            $output[$group][$cardDeveloper][$status][$size][] = "[{$card['name']}]({$card['shortUrl']})";
+            $output[$group][$cardDeveloper][$status][$size][] = [
+                'name' => "[{$card['name']}]({$card['shortUrl']})",
+                'date' => "(**{$devStart}** ~ **{$devEnd}**)",
+            ];
         }
 
         $filter = [
@@ -345,19 +348,15 @@ class Nueip
      */
     private function _getStatus($cardStart, $cardEnd)
     {
-        if (isset($cardEnd) && $cardEnd < $this->start) {
+        if ($cardEnd !== '2099-12-31' && $cardEnd < $this->start) {
             return '過去完成';
         }
 
-        if (isset($cardEnd) && $cardEnd > $this->end) {
-            return '預計完成';
-        }
-
-        if (isset($cardEnd)) {
+        if ($cardEnd !== '2099-12-31' && $cardEnd <= $this->end) {
             return '已完成';
         }
 
-        if (isset($cardStart)) {
+        if ($cardStart !== '0000-00-00') {
             return '開發中';
         }
 
@@ -414,8 +413,8 @@ class Nueip
                 foreach ($sizeGroup as $size => $cardGroup) {
                     $countSize[$developer][$size][$status] = ($countSize[$developer][$size][$status] ?? 0) + count($cardGroup);
                     $countSize['總計'][$size][$status] = ($countSize['總計'][$size][$status] ?? 0) + count($cardGroup);
-                    foreach ($cardGroup as $cardTitle) {
-                        preg_match('/dev|patch|hotfix/i', $cardTitle, $matches);
+                    foreach ($cardGroup as $cardMeta) {
+                        preg_match('/dev|patch|hotfix/i', $cardMeta['name'], $matches);
                         $cardType = ucfirst(strtolower($matches[0] ?? 'other'));
                         $countType[$developer][$cardType][$status] = ($countType[$developer][$cardType][$status] ?? 0) + 1;
                         $countType['總計'][$cardType][$status] = ($countType['總計'][$cardType][$status] ?? 0) + 1;
@@ -479,9 +478,23 @@ class Nueip
                     }
 
                     $contents[] = "  - {$size}";
-                    foreach ($cardGroup as $cardTitle) {
-                        $contents[] = "    - {$cardTitle}";
-                        $contents[] = '      - 目前工作進度:';
+                    foreach ($cardGroup as $cardMate) {
+                        $contents[] = "    - {$cardMate['name']}";
+
+                        switch ($status) {
+                            case '開發中':
+                                $contents[] = "      - 開發起訖: {$cardMate['date']}";
+                                $contents[] = "      - 項目進度: ";
+                                break;
+                            case '已完成':
+                                $contents[] = "      - 開發起訖: {$cardMate['date']}";
+                                $contents[] = "      - 項目進度: 進入測試序列 | 結案";
+                                break;
+                            case '未處理':
+                            default:
+                                $contents[] = "      - 項目進度: 預排工作事項";
+                                break;
+                        }
                     }
                 }
             }
